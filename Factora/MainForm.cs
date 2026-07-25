@@ -1,19 +1,10 @@
 ﻿using Factora.Data;
 using Factora.Documents;
 using Factora.Models;
-using QuestPDF.Fluent;        
+using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
-using System.Drawing;
-using System.IO;               
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Factora
 {
@@ -21,26 +12,50 @@ namespace Factora
     {
         public MainForm()
         {
+
             InitializeComponent();
-            // Задължително за QuestPDF (безплатен лиценз)
             QuestPDF.Settings.License = LicenseType.Community;
 
-            // Инициализация на базата данни
             _db.Setup();
 
-            // Връзваме таблицата с артикулите
-            dataGridViewItems.DataSource = _items;
+            txtInvoiceNumber.Text = _db.GetNextInvoiceNumber();
+  
+
+         
+            LoadClientsDropdown();
+            cmbClients.SelectedIndexChanged += CmbClients_SelectedIndexChanged;
+
+      
         }
 
         private BindingList<InvoiceItem> _items = new();
         private Database _db = new();
 
-        // ЕТО ГО ЛИПСВАЩИЯ КОНСТРУКТОР:
+        private void LoadClientsDropdown()
+        {
+            var clients = _db.GetAllClients();
+            cmbClients.DataSource = null;
+            cmbClients.DataSource = clients;
+            cmbClients.DisplayMember = "ClientName"; 
+            cmbClients.SelectedIndex = -1;           
+        }
 
+        private void CmbClients_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cmbClients.SelectedItem is Invoice client)
+            {
+                txtClientName.Text = client.ClientName;
+                txtClientCity.Text = client.ClientCity;
+                txtClientAddress.Text = client.ClientAddress;
+                txtClientMol.Text = client.ClientMol;
+                txtClientVatId.Text = client.ClientVatId;
+                txtClientEik.Text = client.ClientEikEgn;
+                txtClientVatNum.Text = client.ClientVatNumber;
+            }
+        }
 
         private void btnGenerate_Click(object sender, EventArgs e)
         {
-            // 1. Събираме данните от екрана
             var invoice = new Invoice
             {
                 InvoiceNumber = txtInvoiceNumber.Text,
@@ -52,28 +67,28 @@ namespace Factora
                 ClientVatId = txtClientVatId.Text,
                 ClientEikEgn = txtClientEik.Text,
                 ClientVatNumber = txtClientVatNum.Text,
-                VatRate = numVatRate.Value, // NumericUpDown за ДДС %
+                VatRate = numVatRate.Value,
                 Items = new List<InvoiceItem>(_items)
             };
 
-            if (invoice.Items.Count == 0)
-            {
-                MessageBox.Show("Моля, добавете поне един артикул!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
 
-            // 2. Записваме в локалната база SQLite
             _db.SaveInvoice(invoice);
 
-            // 3. Генерираме PDF
+            _db.SaveOrUpdateClient(invoice); 
+            LoadClientsDropdown();
+
+            txtInvoiceNumber.Text = _db.GetNextInvoiceNumber();
+            _items.Clear();
+
             Directory.CreateDirectory("Invoices");
             string filePath = Path.Combine("Invoices", $"Invoice_{invoice.InvoiceNumber}.pdf");
 
             var document = new InvoiceDocument(invoice);
             document.GeneratePdf(filePath);
 
-            // 4. Отваряме готовия PDF веднага
             Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
         }
+
+
     }
 }

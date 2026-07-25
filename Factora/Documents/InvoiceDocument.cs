@@ -25,71 +25,123 @@ namespace Factora.Documents
         {
             container.Page(page =>
             {
-                page.Margin(30);
+                // Малко по-широки граници (Margin 10) за максимално използваема площ
+                page.Margin(10);
                 page.Size(PageSizes.A4);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
+                page.DefaultTextStyle(x => x.FontSize(8.5f).FontFamily(Fonts.Arial));
 
-                page.Header().Element(ComposeHeader);
-                page.Content().Element(ComposeContent);
-                page.Footer().Element(ComposeFooter);
+                page.Content().Column(col =>
+                {
+                    col.Item().Element(ComposeHeader);
+                    col.Item().Element(ComposeContent);
+                    col.Item().Element(ComposeFooter);
+                });
             });
         }
 
+        #region Горна част (Хедер - 3 колони: Получател | Фактура | Доставчик)
         private void ComposeHeader(IContainer container)
         {
-            container.Row(row =>
+            container.Border(1).BorderColor(Colors.Black).Row(row =>
             {
-                // ЛЯВ БЛОК: ПОЛУЧАТЕЛ (Динамичен)
-                row.RelativeItem().Border(1).Padding(6).Column(col =>
+                // 1. ЛЯВА КОЛОНА - ПОЛУЧАТЕЛ (Увеличена на 4.4f, за да побере удобно всички 13 кутийки!)
+                row.RelativeItem(4.4f).BorderRight(1).Padding(5).Column(col =>
                 {
-                    col.Item().Text("ПОЛУЧАТЕЛ:").Bold().FontSize(11);
-                    col.Item().PaddingBottom(4).Text(_model.ClientName).Bold().FontSize(11);
-
-                    col.Item().Table(table =>
+                    col.Item().Row(r =>
                     {
-                        table.ColumnsDefinition(c => { c.ConstantColumn(90); c.RelativeColumn(); });
-                        void AddRow(string lbl, string val)
-                        {
-                            table.Cell().Text(lbl).FontColor(Colors.Grey.Darken2);
-                            table.Cell().Text(val).Bold();
-                        }
-                        AddRow("Гр./с.:", _model.ClientCity);
-                        AddRow("Адрес:", _model.ClientAddress);
-                        AddRow("МОЛ:", _model.ClientMol);
-                        AddRow("Ид. № по ЗДДС:", string.IsNullOrWhiteSpace(_model.ClientVatId) ? "-" : _model.ClientVatId);
-                        AddRow("ЕИК/ЕГН:", _model.ClientEikEgn);
-                        AddRow("ДДС/VAT/№:", string.IsNullOrWhiteSpace(_model.ClientVatNumber) ? "-" : _model.ClientVatNumber);
+                        r.RelativeItem().Text("ПОЛУЧАТЕЛ:").Bold().FontSize(10);
+                        r.AutoItem().Text("CONSIGNEE").FontSize(7).FontColor(Colors.Grey.Darken2);
+                    });
+
+                    col.Item().PaddingTop(2).Text(_model.ClientName).Bold().FontSize(10);
+                    col.Item().Text($"Гр./с.: {_model.ClientCity}");
+                    col.Item().Text($"Адрес: {_model.ClientAddress}");
+                    col.Item().Text($"МОЛ: {_model.ClientMol}");
+
+                    // Кутийки за Ид. № по ЗДДС
+                    col.Item().PaddingTop(4).Row(r =>
+                    {
+                        r.AutoItem().PaddingRight(4).Text("Ид. № по ЗДДС:").FontSize(8);
+                        r.RelativeItem().Element(c => DrawDigitBoxes(c, _model.ClientVatId, 11));
+                    });
+
+                    // Кутийки за ЕИК/ЕГН
+                    col.Item().PaddingTop(3).Row(r =>
+                    {
+                        r.AutoItem().PaddingRight(4).Text("ЕИК/ЕГН:").FontSize(8);
+                        r.RelativeItem().Element(c => DrawDigitBoxes(c, _model.ClientEikEgn, 13));
+                    });
+
+                    col.Item().PaddingTop(4).LineHorizontal(0.5f).LineColor(Colors.Grey.Medium);
+                    col.Item().PaddingTop(2).Text("Данни за дистанционна продажба:").FontSize(7).FontColor(Colors.Grey.Darken1);
+                    col.Item().Text($"ДДС/VAT/ №: {_model.ClientVatNumber}");
+
+                    col.Item().PaddingTop(2).Row(r =>
+                    {
+                        r.RelativeItem().Text($"Ставка ДДС: {_model.VatRate}%");
+                        r.RelativeItem().Text("Размер на данъка:");
                     });
                 });
 
-                // ДЯСЕН БЛОК: ДОСТАВЧИК (Статичен - МЕТАЛ-ХАРТ ЕООД)
-                row.RelativeItem().Border(1).Padding(6).Column(col =>
+                // 2. СРЕДНА КОЛОНА - ФАКТУРА (Компактна и центрирана)
+                row.RelativeItem(2.2f).BorderRight(1).Column(col =>
                 {
-                    col.Item().AlignCenter().Text("ФАКТУРА / INVOICE").FontSize(14).Bold();
-                    col.Item().AlignCenter().Text($"№ {_model.InvoiceNumber}").FontSize(12).Bold();
-                    col.Item().AlignCenter().Text($"Дата: {_model.IssueDate:dd.MM.yyyy} г.");
-                    col.Item().AlignCenter().PaddingBottom(4).Text($"Място: {_model.PlaceOfIssue}");
+                    col.Item().Padding(4).Column(c =>
+                    {
+                        c.Item().AlignCenter().Text("ФАКТУРА").FontSize(15).Bold();
+                        c.Item().AlignCenter().Text("INVOICE").FontSize(7.5f).FontColor(Colors.Grey.Darken2);
+                        c.Item().PaddingTop(2).AlignCenter().Text($"№ {_model.InvoiceNumber}").FontSize(11).Bold();
+                        c.Item().PaddingTop(2).AlignCenter().Text($"Дата: {_model.IssueDate:dd.MM.yyyy} г.").FontSize(8);
+                        c.Item().AlignCenter().Text($"Място: {_model.PlaceOfIssue}").FontSize(8);
+                    });
 
-                    col.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    col.Item().LineHorizontal(1);
 
-                    col.Item().PaddingTop(4).Text("ДОСТАВЧИК:").Bold();
-                    col.Item().Text("„МЕТАЛ-ХАРТ“ ЕООД").Bold();
+                    col.Item().Padding(3).Column(c =>
+                    {
+                        c.Item().Text("☐ ДЕБИТНО ИЗВЕСТИЕ").FontSize(7);
+                        c.Item().Text("☐ КРЕДИТНО ИЗВЕСТИЕ").FontSize(7);
+                        c.Item().Text("към фактура № ............").FontSize(6.5f);
+                    });
+
+                    col.Item().LineHorizontal(1);
+
+                    col.Item().Padding(3).Column(c =>
+                    {
+                        c.Item().Text("Начин на плащане:").FontSize(7.5f).Bold();
+                        c.Item().Text("☐ В брой   ☐ платежно").FontSize(7);
+                    });
+                });
+
+                // 3. ДЯСНА КОЛОНА - ДОСТАВЧИК
+                row.RelativeItem(3.4f).Padding(5).Column(col =>
+                {
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Text("ДОСТАВЧИК:").Bold().FontSize(10);
+                        r.AutoItem().Text("DELIVERER").FontSize(7).FontColor(Colors.Grey.Darken2);
+                    });
+                    col.Item().PaddingTop(2).Text("„МЕТАЛ-ХАРТ“ ЕООД").Bold().FontSize(10);
                     col.Item().Text("с. Овощник, ул. \"Родопи\" №7");
                     col.Item().Text("МОЛ: Чавдар Войводов");
-                    col.Item().Text("ЕИК: 123694428 | ИН по ДДС: BG 123694428");
-                    col.Item().Text("IBAN: BG68 PRCB 9230 1023 0016 19").Bold();
-                    col.Item().Text("BIC: PRCBBGSF (ПроКредит Банк)");
+                    col.Item().Text("ЕИК: 123694428");
+                    col.Item().Text("ИН по ДДС: BG 123694428");
+                    col.Item().PaddingTop(3).Text("ПроКредит Банк").FontSize(8.5f);
+                    col.Item().Text("IBAN: BG68 PRCB 9230 1023 0016 19").Bold().FontSize(8.5f);
+                    col.Item().Text("BIC: PRCBBGSF").FontSize(8.5f);
                 });
             });
         }
+        #endregion
 
+        #region Средна част (Таблица с артикули)
         private void ComposeContent(IContainer container)
         {
-            container.PaddingVertical(10).Table(table =>
+            container.BorderLeft(1).BorderRight(1).Table(table =>
             {
                 table.ColumnsDefinition(columns =>
                 {
-                    columns.ConstantColumn(25);  // №
+                    columns.ConstantColumn(22);  // №
                     columns.RelativeColumn(4);   // Наименование
                     columns.RelativeColumn(1);   // Мярка
                     columns.RelativeColumn(1);   // Кол.
@@ -100,89 +152,151 @@ namespace Factora.Documents
 
                 table.Header(header =>
                 {
-                    void Style(IContainer c, string t) => c.Border(1).Background(Colors.Grey.Lighten3).Padding(3).AlignCenter().Text(t).Bold();
+                    void Style(IContainer c, string t) => c.Border(1).Background(Colors.Grey.Lighten3).Padding(3).AlignCenter().Text(t).Bold().FontSize(8);
+
                     Style(header.Cell(), "№");
-                    Style(header.Cell(), "НАИМЕНОВАНИЕ НА СТОКИТЕ / УСЛУГИТЕ");
+                    Style(header.Cell(), "НАИМЕНОВАНИЕ НА СТОКИТЕ ИЛИ УСЛУГИТЕ");
                     Style(header.Cell(), "Мярка");
-                    Style(header.Cell(), "Кол.");
-                    Style(header.Cell(), "Ед. цена");
-                    Style(header.Cell(), "Отст. %");
+                    Style(header.Cell(), "Количество");
+                    Style(header.Cell(), "Единична цена");
+                    Style(header.Cell(), "Отстъпка");
                     Style(header.Cell(), "Стойност");
                 });
 
-                // АКО ИМА ВЪВЕДЕНИ АРТИКУЛИ -> Ги печатаме
-                if (_model.Items.Count > 0)
+                bool isManual = _model.Items.Count == 0;
+                int rowsToDraw = isManual ? 10 : Math.Max(_model.Items.Count, 10);
+
+                for (int i = 0; i < rowsToDraw; i++)
                 {
-                    int index = 1;
-                    foreach (var item in _model.Items)
+                    var item = i < _model.Items.Count ? _model.Items[i] : null;
+
+                    void CellStyle(IContainer c, string t, bool alignRight = false)
                     {
-                        table.Cell().Border(1).Padding(3).AlignCenter().Text(index++.ToString());
-                        table.Cell().Border(1).Padding(3).Text(item.Description);
-                        table.Cell().Border(1).Padding(3).AlignCenter().Text(item.Measure);
-                        table.Cell().Border(1).Padding(3).AlignRight().Text($"{item.Quantity:0.##}");
-                        table.Cell().Border(1).Padding(3).AlignRight().Text($"{item.UnitPrice:0.00}");
-                        table.Cell().Border(1).Padding(3).AlignCenter().Text(item.Discount > 0 ? $"{item.Discount}%" : "");
-                        table.Cell().Border(1).Padding(3).AlignRight().Text($"{item.Total:0.00}");
+                        var cell = c.BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten1).BorderLeft(0.5f).BorderRight(0.5f).MinHeight(16).Padding(2);
+                        if (alignRight) cell.AlignRight().Text(t).FontSize(8.5f);
+                        else cell.Text(t).FontSize(8.5f);
                     }
-                }
-                else
-                {
-                    // АКО НЯМА АРТИКУЛИ -> Чертаем 10 празни реда за писане с химикал!
-                    for (int i = 1; i <= 10; i++)
-                    {
-                        // MinHeight(24) дава достатъчно място по височина за писане на ръка
-                        table.Cell().Border(1).MinHeight(24).Padding(3).AlignCenter().Text(i.ToString()).FontColor(Colors.Grey.Medium);
-                        table.Cell().Border(1).MinHeight(24).Text("");
-                        table.Cell().Border(1).MinHeight(24).Text("");
-                        table.Cell().Border(1).MinHeight(24).Text("");
-                        table.Cell().Border(1).MinHeight(24).Text("");
-                        table.Cell().Border(1).MinHeight(24).Text("");
-                        table.Cell().Border(1).MinHeight(24).Text("");
-                    }
+
+                    CellStyle(table.Cell().AlignCenter(), (i + 1).ToString());
+                    CellStyle(table.Cell(), item?.Description ?? "");
+                    CellStyle(table.Cell().AlignCenter(), item?.Measure ?? "");
+                    CellStyle(table.Cell(), item != null ? $"{item.Quantity:0.##}" : "", true);
+                    CellStyle(table.Cell(), item != null ? $"{item.UnitPrice:0.00}" : "", true);
+                    CellStyle(table.Cell().AlignCenter(), item != null && item.Discount > 0 ? $"{item.Discount}%" : "");
+                    CellStyle(table.Cell(), item != null ? $"{item.Total:0.00}" : "", true);
                 }
             });
         }
+        #endregion
 
+        #region Долна част (Тотали, Подписи и Счетоводна справка)
         private void ComposeFooter(IContainer container)
         {
-            bool isManual = _model.Items.Count == 0; // Проверяваме дали е бланка за химикал
+            bool isManual = _model.Items.Count == 0;
 
-            container.Column(col =>
+            container.Border(1).Column(col =>
             {
                 col.Item().Row(row =>
                 {
-                    // Ляво: Словом (Ако е на ръка, оставяме точки за писане)
-                    row.RelativeItem().PaddingRight(10).Column(left =>
+                    // ЛЯВА ЧАСТ - Словом, Данъчно събитие, Подписи
+                    row.RelativeItem().BorderRight(1).Padding(5).Column(c =>
                     {
-                        left.Item().Border(1).Padding(5).Text(t =>
+                        c.Item().Text(t =>
                         {
                             t.Span("Словом: ").Bold();
-                            t.Span(isManual ? "...................................................................." : NumberToWordsBg.ToWords(_model.GrandTotal));
+                            // Безопасна дължина на пунктира (няма да препълни реда)
+                            t.Span(isManual ? "..................................................................." : NumberToWordsBg.ToWords(_model.GrandTotal));
+                        });
+
+                        c.Item().PaddingTop(2).Text("☐ Обстоятелства, които определят стоката като нова    ☐ ДДС е осигурено от получателя").FontSize(6.5f);
+                        c.Item().Text("☐ Неначисляване на ДДС - чл. 86(3) от ЗДДС / чл. 114 от ЗДДС").FontSize(6.5f);
+
+                        c.Item().PaddingTop(2).Row(r =>
+                        {
+                            r.RelativeItem().Column(sub =>
+                            {
+                                sub.Item().Text("Получател: ............................").Bold();
+                                sub.Item().Text($"Дата на данъчното събитие: {_model.IssueDate:dd.MM.yyyy} г.");
+                                sub.Item().Text("Дата на плащане: ....................");
+                                sub.Item().Text("Стоката получена на: ...............");
+                            });
+
+                            r.RelativeItem().Column(sub =>
+                            {
+                                sub.Item().Text("Съставил: ............................").Bold();
+                                sub.Item().Text("Име и фамилия: ....................");
+                                sub.Item().Text("Подпис: ................................");
+                            });
                         });
                     });
 
-                    // Дясно: Тотали
-                    row.ConstantItem(220).Table(table =>
+                    // ДЯСНА ЧАСТ - ТОТАЛИ (Намалена от 200 на 185 за повече място на подписите)
+                    row.ConstantItem(185).Table(table =>
                     {
-                        table.ColumnsDefinition(c => { c.RelativeColumn(); c.ConstantColumn(80); });
+                        table.ColumnsDefinition(c => { c.RelativeColumn(); c.ConstantColumn(65); });
 
-                        table.Cell().Border(1).Padding(3).Text("Данъчна основа:").Bold();
-                        table.Cell().Border(1).Padding(3).AlignRight().Text(isManual ? "........... лв." : $"{_model.SubTotal:0.00} лв.");
+                        void TotalRow(string label, string val, bool bold = false, bool bg = false)
+                        {
+                            void StyleAndPrint(IContainer cellContainer, string text, bool alignRight)
+                            {
+                                var c = cellContainer.BorderBottom(1).BorderColor(Colors.Grey.Lighten1);
 
-                        table.Cell().Border(1).Padding(3).Text($"ДДС ({_model.VatRate}%):");
-                        table.Cell().Border(1).Padding(3).AlignRight().Text(isManual ? "........... лв." : $"{_model.VatAmount:0.00} лв.");
+                                if (bg) c = c.Background(Colors.Grey.Lighten3);
+                                c = c.Padding(2.5f);
+                                if (alignRight) c = c.AlignRight();
 
-                        table.Cell().Border(1).Background(Colors.Grey.Lighten3).Padding(3).Text("СУМА ЗА ПЛАЩАНЕ:").Bold();
-                        table.Cell().Border(1).Background(Colors.Grey.Lighten3).Padding(3).AlignRight().Text(isManual ? "........... лв." : $"{_model.GrandTotal:0.00} лв.").Bold();
+                                if (bold) c.Text(text).Bold();
+                                else c.Text(text);
+                            }
+
+                            StyleAndPrint(table.Cell(), label, false);
+                            StyleAndPrint(table.Cell(), val, true);
+                        }
+
+                        TotalRow("Данъчна основа:", isManual ? "........... лв." : $"{_model.SubTotal:0.00} лв.");
+                        TotalRow($"ДДС / VAT ({_model.VatRate}%):", isManual ? "........... лв." : $"{_model.VatAmount:0.00} лв.");
+                        TotalRow("Сума за плащане:", isManual ? "........... лв." : $"{_model.GrandTotal:0.00} лв.", true, true);
                     });
                 });
 
-                col.Item().PaddingTop(15).Row(row =>
+                // НАЙ-ДОЛЕН РЕД - Счетоводна справка
+                col.Item().BorderTop(1).Row(row =>
                 {
-                    row.RelativeItem().Text("Съставил: ............................................").FontSize(9);
-                    row.RelativeItem().AlignRight().Text("Получател: ............................................").FontSize(9);
+                    row.ConstantItem(120).BorderRight(1).Padding(2).AlignCenter().Text("Счетоводна справка").FontSize(7).Bold();
+                    row.RelativeItem().Table(t =>
+                    {
+                        t.ColumnsDefinition(c => { c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); });
+                        t.Cell().BorderRight(1).Padding(2).AlignCenter().Text("с/ка дебит").FontSize(7);
+                        t.Cell().BorderRight(1).Padding(2).AlignCenter().Text("с/ка кредит").FontSize(7);
+                        t.Cell().Padding(2).AlignCenter().Text("СУМА").FontSize(7);
+                    });
                 });
             });
         }
+        #endregion
+
+        #region Помощни методи (Генериране на квадратчета за цифри)
+        private void DrawDigitBoxes(IContainer container, string text, int count)
+        {
+            container.Row(row =>
+            {
+                string cleanText = (text ?? "").Trim();
+                for (int i = 0; i < count; i++)
+                {
+                    string charToPrint = i < cleanText.Length ? cleanText[i].ToString() : "";
+                    row.AutoItem()
+                       .Width(9.5f) // <-- КРИТИЧНАТА КОРЕКЦИЯ: 9.5pt ширина и 7.5 шрифт гарантират влизане!
+                       .Height(12)
+                       .Border(0.5f)
+                       .BorderColor(Colors.Black)
+                       .AlignCenter()
+                       .AlignMiddle()
+                       .Text(charToPrint)
+                       .FontSize(7.5f)
+                       .Bold();
+                }
+            });
+        }
+        #endregion
     }
 }

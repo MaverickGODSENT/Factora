@@ -102,13 +102,29 @@ namespace Factora.Data
         VALUES (@ClientName, @ClientCity, @ClientAddress, @ClientMol, @ClientVatId, @ClientEikEgn, @ClientVatNumber)
         ON CONFLICT(ClientName) DO UPDATE SET
             ClientCity = excluded.ClientCity,
-            ClientAddress = excluded.Address,
+            ClientAddress = excluded.ClientAddress,
             ClientMol = excluded.ClientMol,
             ClientVatId = excluded.ClientVatId,
             ClientEikEgn = excluded.ClientEikEgn,
             ClientVatNumber = excluded.ClientVatNumber;";
 
             connection.Execute(sql, inv);
+        }
+        public string GetNextInvoiceNumber()
+        {
+            using var connection = new SqliteConnection(_connectionString);
+
+           
+            var lastNumberStr = connection.ExecuteScalar<string>("SELECT InvoiceNumber FROM Invoices ORDER BY Id DESC LIMIT 1;");
+
+            
+            if (string.IsNullOrWhiteSpace(lastNumberStr) || !long.TryParse(lastNumberStr, out long lastNumber))
+            {
+                return "0000000001";
+            }
+
+         
+            return (lastNumber + 1).ToString("D10");
         }
     }
 }
