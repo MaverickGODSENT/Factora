@@ -25,7 +25,6 @@ namespace Factora.Documents
         {
             container.Page(page =>
             {
-                // Малко по-широки граници (Margin 10) за максимално използваема площ
                 page.Margin(10);
                 page.Size(PageSizes.A4);
                 page.DefaultTextStyle(x => x.FontSize(8.5f).FontFamily(Fonts.Arial));
@@ -44,7 +43,6 @@ namespace Factora.Documents
         {
             container.Border(1).BorderColor(Colors.Black).Row(row =>
             {
-                // 1. ЛЯВА КОЛОНА - ПОЛУЧАТЕЛ (Увеличена на 4.4f, за да побере удобно всички 13 кутийки!)
                 row.RelativeItem(4.4f).BorderRight(1).Padding(5).Column(col =>
                 {
                     col.Item().Row(r =>
@@ -58,14 +56,12 @@ namespace Factora.Documents
                     col.Item().Text($"Адрес: {_model.ClientAddress}");
                     col.Item().Text($"МОЛ: {_model.ClientMol}");
 
-                    // Кутийки за Ид. № по ЗДДС
                     col.Item().PaddingTop(4).Row(r =>
                     {
                         r.AutoItem().PaddingRight(4).Text("Ид. № по ЗДДС:").FontSize(8);
                         r.RelativeItem().Element(c => DrawDigitBoxes(c, _model.ClientVatId, 11));
                     });
 
-                    // Кутийки за ЕИК/ЕГН
                     col.Item().PaddingTop(3).Row(r =>
                     {
                         r.AutoItem().PaddingRight(4).Text("ЕИК/ЕГН:").FontSize(8);
@@ -83,7 +79,6 @@ namespace Factora.Documents
                     });
                 });
 
-                // 2. СРЕДНА КОЛОНА - ФАКТУРА (Компактна и центрирана)
                 row.RelativeItem(2.2f).BorderRight(1).Column(col =>
                 {
                     col.Item().Padding(4).Column(c =>
@@ -113,7 +108,6 @@ namespace Factora.Documents
                     });
                 });
 
-                // 3. ДЯСНА КОЛОНА - ДОСТАВЧИК
                 row.RelativeItem(3.4f).Padding(5).Column(col =>
                 {
                     col.Item().Row(r =>
@@ -198,13 +192,11 @@ namespace Factora.Documents
             {
                 col.Item().Row(row =>
                 {
-                    // ЛЯВА ЧАСТ - Словом, Данъчно събитие, Подписи
                     row.RelativeItem().BorderRight(1).Padding(5).Column(c =>
                     {
                         c.Item().Text(t =>
                         {
                             t.Span("Словом: ").Bold();
-                            // Безопасна дължина на пунктира (няма да препълни реда)
                             t.Span(isManual ? "..................................................................." : NumberToWordsBg.ToWords(_model.GrandTotal));
                         });
 
@@ -230,7 +222,6 @@ namespace Factora.Documents
                         });
                     });
 
-                    // ДЯСНА ЧАСТ - ТОТАЛИ (Намалена от 200 на 185 за повече място на подписите)
                     row.ConstantItem(185).Table(table =>
                     {
                         table.ColumnsDefinition(c => { c.RelativeColumn(); c.ConstantColumn(65); });
@@ -285,7 +276,7 @@ namespace Factora.Documents
                 {
                     string charToPrint = i < cleanText.Length ? cleanText[i].ToString() : "";
                     row.AutoItem()
-                       .Width(9.5f) // <-- КРИТИЧНАТА КОРЕКЦИЯ: 9.5pt ширина и 7.5 шрифт гарантират влизане!
+                       .Width(9.5f) 
                        .Height(12)
                        .Border(0.5f)
                        .BorderColor(Colors.Black)

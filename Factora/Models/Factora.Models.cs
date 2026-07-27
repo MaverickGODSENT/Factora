@@ -12,9 +12,8 @@ namespace Factora.Models
         public string Measure { get; set; } = "бр.";
         public decimal Quantity { get; set; } = 1;
         public decimal UnitPrice { get; set; }
-        public decimal Discount { get; set; } // в проценти (%)
+        public decimal Discount { get; set; } 
 
-        // Стойност = (Количество * Цена) - Отстъпка
         public decimal Total => (Quantity * UnitPrice) * (1 - (Discount / 100m));
     }
     public class Invoice
@@ -24,20 +23,17 @@ namespace Factora.Models
         public DateTime IssueDate { get; set; } = DateTime.Now;
         public string PlaceOfIssue { get; set; } = "с. Овощник";
 
-        // Полета за ПОЛУЧАТЕЛ (според бланката)
         public string ClientName { get; set; } = string.Empty;
         public string ClientCity { get; set; } = string.Empty;
         public string ClientAddress { get; set; } = string.Empty;
         public string ClientMol { get; set; } = string.Empty;
-        public string ClientVatId { get; set; } = string.Empty;     // Ид. № по ЗДДС
-        public string ClientEikEgn { get; set; } = string.Empty;    // ЕИК/ЕГН
-        public string ClientVatNumber { get; set; } = string.Empty; // ДДС/VAT/№
+        public string ClientVatId { get; set; } = string.Empty;    
+        public string ClientEikEgn { get; set; } = string.Empty;    
+        public string ClientVatNumber { get; set; } = string.Empty; 
 
-        // Ставка ДДС и артикули
         public decimal VatRate { get; set; } = 20m;
         public List<InvoiceItem> Items { get; set; } = new();
 
-        // Автоматични изчисления
         public decimal SubTotal => Items.Sum(i => i.Total);
         public decimal VatAmount => SubTotal * (VatRate / 100m);
         public decimal GrandTotal => SubTotal + VatAmount;
