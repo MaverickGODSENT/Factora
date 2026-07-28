@@ -377,7 +377,7 @@ namespace Factora
             // 
             colUnitPrice.DataPropertyName = "UnitPrice";
             colUnitPrice.FillWeight = 40F;
-            colUnitPrice.HeaderText = "Ед. цена (лв.)";
+            colUnitPrice.HeaderText = "Ед. цена (EUR)";
             colUnitPrice.Name = "colUnitPrice";
             // 
             // colDiscount

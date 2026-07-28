@@ -15,10 +15,11 @@ namespace Factora.Documents
     public class InvoiceDocument : IDocument
     {
         private readonly Invoice _model;
-
-        public InvoiceDocument(Invoice model)
+        private readonly string _documentType;
+        public InvoiceDocument(Invoice model, string documentType = "ОРИГИНАЛ")
         {
             _model = model;
+            _documentType = documentType;
         }
 
         public void Compose(IDocumentContainer container)
@@ -85,9 +86,9 @@ namespace Factora.Documents
                     {
                         c.Item().AlignCenter().Text("ФАКТУРА").FontSize(15).Bold();
                         c.Item().AlignCenter().Text("INVOICE").FontSize(7.5f).FontColor(Colors.Grey.Darken2);
+                        c.Item().AlignCenter().Text($"({_documentType})").FontSize(7.5f).FontColor(Colors.Grey.Darken2);
                         c.Item().PaddingTop(2).AlignCenter().Text($"№ {_model.InvoiceNumber}").FontSize(11).Bold();
                         c.Item().PaddingTop(2).AlignCenter().Text($"Дата: {_model.IssueDate:dd.MM.yyyy} г.").FontSize(8);
-                        c.Item().AlignCenter().Text($"Място: {_model.PlaceOfIssue}").FontSize(8);
                     });
 
                     col.Item().LineHorizontal(1);
@@ -244,9 +245,9 @@ namespace Factora.Documents
                             StyleAndPrint(table.Cell(), val, true);
                         }
 
-                        TotalRow("Данъчна основа:", isManual ? "........... лв." : $"{_model.SubTotal:0.00} лв.");
-                        TotalRow($"ДДС / VAT ({_model.VatRate}%):", isManual ? "........... лв." : $"{_model.VatAmount:0.00} лв.");
-                        TotalRow("Сума за плащане:", isManual ? "........... лв." : $"{_model.GrandTotal:0.00} лв.", true, true);
+                        TotalRow("Данъчна основа:", isManual ? "........... EUR." : $"{_model.SubTotal:0.00} EUR.");
+                        TotalRow($"ДДС / VAT ({_model.VatRate}%):", isManual ? "........... EUR." : $"{_model.VatAmount:0.00} EUR.");
+                        TotalRow("Сума за плащане:", isManual ? "........... EUR." : $"{_model.GrandTotal:0.00} EUR.", true, true);
                     });
                 });
 

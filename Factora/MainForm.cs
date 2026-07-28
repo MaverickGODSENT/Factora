@@ -122,12 +122,15 @@ namespace Factora
             dataGridViewItems.DataSource = _items; 
 
             Directory.CreateDirectory("Invoices");
-            string filePath = Path.Combine("Invoices", $"Invoice_{invoice.InvoiceNumber}.pdf");
+            string OriginalFilePath = Path.Combine("Invoices", $"Invoice_{invoice.InvoiceNumber}_Original.pdf");
+            string CopyFilePath = Path.Combine("Invoices", $"Invoice_{invoice.InvoiceNumber}_Copy.pdf");
 
-            var document = new InvoiceDocument(invoice);
-            document.GeneratePdf(filePath);
+            var originalDocument = new InvoiceDocument(invoice);
+            originalDocument.GeneratePdf(OriginalFilePath);
+            var copyDocument = new InvoiceDocument(invoice, "КОПИЕ");
+            copyDocument.GeneratePdf(CopyFilePath);
 
-            Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(OriginalFilePath) { UseShellExecute = true });
         }
     }
 }

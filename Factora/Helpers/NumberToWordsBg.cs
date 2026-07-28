@@ -8,21 +8,23 @@ namespace Factora.Helpers
 {
     public static class NumberToWordsBg
     {
-        private static readonly string[] Units = { "", "един", "два", "три", "четири", "пет", "шест", "седем", "осем", "девет" };
+        private static readonly string[] Units = { "", "едно", "две", "три", "четири", "пет", "шест", "седем", "осем", "девет" };
         private static readonly string[] Teens = { "десет", "единадесет", "дванадесет", "тринадесет", "четиринадесет", "петнадесет", "шестнадесет", "седемнадесет", "осемнадесет", "деветнадесет" };
         private static readonly string[] Tens = { "", "десет", "двадесет", "тридесет", "четиридесет", "петдесет", "шестдесет", "седемдесет", "осемдесет", "деветдесет" };
         private static readonly string[] Hundreds = { "", "сто", "двеста", "триста", "четириста", "петстотин", "шестстотин", "седемстотин", "осемстотин", "деветстотин" };
 
         public static string ToWords(decimal amount)
         {
-            long leva = (long)Math.Floor(amount);
-            int stotinki = (int)Math.Round((amount - leva) * 100);
+            long euro = (long)Math.Floor(amount);
+            int cents = (int)Math.Round((amount - euro) * 100);
 
-            string levaText = leva == 0 ? "нула" : ConvertGroup(leva);
-            string currencyLeva = leva == 1 ? "лев" : "лева";
-            string currencyStotinki = stotinki == 1 ? "стотинка" : "стотинки";
+            string euroText = euro == 0 ? "нула" : ConvertGroup(euro);
 
-            return $"{levaText} {currencyLeva} и {stotinki:00} {currencyStotinki}";
+            string currencyEuro = "евро";
+
+            string currencyCents = cents == 1 ? "цент" : "цента";
+
+            return $"{euroText} {currencyEuro} и {cents:00} {currencyCents}";
         }
 
         private static string ConvertGroup(long n)
