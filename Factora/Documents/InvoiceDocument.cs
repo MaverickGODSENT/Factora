@@ -86,7 +86,6 @@ namespace Factora.Documents
                     {
                         c.Item().AlignCenter().Text("ФАКТУРА").FontSize(15).Bold();
                         c.Item().AlignCenter().Text("INVOICE").FontSize(7.5f).FontColor(Colors.Grey.Darken2);
-                        c.Item().AlignCenter().Text($"({_documentType})").FontSize(7.5f).FontColor(Colors.Grey.Darken2);
                         c.Item().PaddingTop(2).AlignCenter().Text($"№ {_model.InvoiceNumber}").FontSize(11).Bold();
                         c.Item().PaddingTop(2).AlignCenter().Text($"Дата: {_model.IssueDate:dd.MM.yyyy} г.").FontSize(8);
                     });
@@ -132,54 +131,68 @@ namespace Factora.Documents
         #region Средна част (Таблица с артикули)
         private void ComposeContent(IContainer container)
         {
-            container.BorderLeft(1).BorderRight(1).Table(table =>
+            // Използваме слоеве (Layers), за да сложим текст зад таблицата
+            container.Layers(layers =>
             {
-                table.ColumnsDefinition(columns =>
+                // 1. ВОДЕН ЗНАК (Изчертава се на заден план)
+                layers.Layer().AlignCenter().AlignMiddle()
+                      .Text(_documentType) // "ОРИГИНАЛ" или "КОПИЕ"
+                      .FontSize(70) // Огромен размер, за да се вижда ясно
+                      .FontColor(Colors.Grey.Lighten2) // Много светло сиво, за да не пречи на черния текст
+                      .Bold();
+
+                // 2. ОСНОВНАТА ТАБЛИЦА (Изчертава се на преден план)
+                layers.PrimaryLayer().BorderLeft(1).BorderRight(1).Table(table =>
                 {
-                    columns.ConstantColumn(22);  // №
-                    columns.RelativeColumn(4);   // Наименование
-                    columns.RelativeColumn(1);   // Мярка
-                    columns.RelativeColumn(1);   // Кол.
-                    columns.RelativeColumn(1.2f);// Ед. цена
-                    columns.RelativeColumn(1);   // Отстъпка
-                    columns.RelativeColumn(1.5f);// Стойност
-                });
-
-                table.Header(header =>
-                {
-                    void Style(IContainer c, string t) => c.Border(1).Background(Colors.Grey.Lighten3).Padding(3).AlignCenter().Text(t).Bold().FontSize(8);
-
-                    Style(header.Cell(), "№");
-                    Style(header.Cell(), "НАИМЕНОВАНИЕ НА СТОКИТЕ ИЛИ УСЛУГИТЕ");
-                    Style(header.Cell(), "Мярка");
-                    Style(header.Cell(), "Количество");
-                    Style(header.Cell(), "Единична цена");
-                    Style(header.Cell(), "Отстъпка");
-                    Style(header.Cell(), "Стойност");
-                });
-
-                bool isManual = _model.Items.Count == 0;
-                int rowsToDraw = isManual ? 10 : Math.Max(_model.Items.Count, 10);
-
-                for (int i = 0; i < rowsToDraw; i++)
-                {
-                    var item = i < _model.Items.Count ? _model.Items[i] : null;
-
-                    void CellStyle(IContainer c, string t, bool alignRight = false)
+                    table.ColumnsDefinition(columns =>
                     {
-                        var cell = c.BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten1).BorderLeft(0.5f).BorderRight(0.5f).MinHeight(16).Padding(2);
-                        if (alignRight) cell.AlignRight().Text(t).FontSize(8.5f);
-                        else cell.Text(t).FontSize(8.5f);
-                    }
+                        columns.ConstantColumn(22);  // №
+                        columns.RelativeColumn(4);   // Наименование
+                        columns.RelativeColumn(1f);   // Мярка
+                        columns.RelativeColumn(1);   // Кол.
+                        columns.RelativeColumn(1.2f);// Ед. цена
+                        columns.RelativeColumn(1f);   // Отстъпка
+                        columns.RelativeColumn(1.5f);// Стойност
+                    });
 
-                    CellStyle(table.Cell().AlignCenter(), (i + 1).ToString());
-                    CellStyle(table.Cell(), item?.Description ?? "");
-                    CellStyle(table.Cell().AlignCenter(), item?.Measure ?? "");
-                    CellStyle(table.Cell(), item != null ? $"{item.Quantity:0.##}" : "", true);
-                    CellStyle(table.Cell(), item != null ? $"{item.UnitPrice:0.00}" : "", true);
-                    CellStyle(table.Cell().AlignCenter(), item != null && item.Discount > 0 ? $"{item.Discount}%" : "");
-                    CellStyle(table.Cell(), item != null ? $"{item.Total:0.00}" : "", true);
-                }
+                    table.Header(header =>
+                    {
+                        void Style(IContainer c, string t) => c.Border(1).Background(Colors.Grey.Lighten3).Padding(3).AlignCenter().Text(t).Bold().FontSize(8);
+
+                        Style(header.Cell(), "№");
+                        Style(header.Cell(), "НАИМЕНОВАНИЕ НА СТОКИТЕ ИЛИ УСЛУГИТЕ");
+                        Style(header.Cell(), "Мярка");
+                        Style(header.Cell(), "Количество");
+                        Style(header.Cell(), "Единична цена");
+                        Style(header.Cell(), "Отстъпка");
+                        Style(header.Cell(), "Стойност");
+                    });
+
+                    bool isManual = _model.Items.Count == 0;
+                    int rowsToDraw = isManual ? 10 : Math.Max(_model.Items.Count, 10);
+
+                    for (int i = 0; i < rowsToDraw; i++)
+                    {
+                        var item = i < _model.Items.Count ? _model.Items[i] : null;
+
+                        void CellStyle(IContainer c, string t, string align = "left")
+                        {
+                            var cell = c.BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten1).BorderLeft(0.5f).BorderRight(0.5f).MinHeight(16).Padding(2);
+
+                            if (align == "right") cell.AlignRight().Text(t).FontSize(8.5f);
+                            else if (align == "center") cell.AlignCenter().Text(t).FontSize(8.5f);
+                            else cell.AlignLeft().Text(t).FontSize(8.5f);
+                        }
+
+                        CellStyle(table.Cell(), (i + 1).ToString(), "center");
+                        CellStyle(table.Cell(), item?.Description ?? "", "left");
+                        CellStyle(table.Cell(), item?.Measure ?? "", "center");
+                        CellStyle(table.Cell(), item != null ? $"{item.Quantity:0.##}" : "", "right");
+                        CellStyle(table.Cell(), item != null ? $"{item.UnitPrice:0.00}" : "", "right");
+                        CellStyle(table.Cell(), item != null && item.Discount > 0 ? $"{item.Discount}%" : "", "center");
+                        CellStyle(table.Cell(), item != null ? $"{item.Total:0.00}" : "", "right");
+                    }
+                });
             });
         }
         #endregion
@@ -217,7 +230,7 @@ namespace Factora.Documents
                             r.RelativeItem().Column(sub =>
                             {
                                 sub.Item().Text("Съставил: ............................").Bold();
-                                sub.Item().Text("Име и фамилия: ....................");
+                                sub.Item().Text("Име и фамилия: Чавдар Войводов");
                                 sub.Item().Text("Подпис: ................................");
                             });
                         });

@@ -15,6 +15,8 @@ namespace Factora
 
             InitializeComponent();
             QuestPDF.Settings.License = LicenseType.Community;
+            dataGridViewItems.AutoGenerateColumns = false;
+
 
             _db.Setup();
 
